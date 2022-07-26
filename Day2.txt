@@ -1,0 +1,154 @@
+  this.lstCustomers = [
+            {"id":101,"name":"Angela Merkel","city":"Berlin","customerSince":new Date(2007,9,22),"orderTotal":5555.55},
+            {"id":102,"name":"Kevin Marsh","city":"London","customerSince":new Date(2004,3,12),"orderTotal":6666.66},
+            {"id":103,"name":"Hamid Ajbouti","city":"Kiev","customerSince":new Date(2003,4,2),"orderTotal":7777.55},
+            {"id":104,"name":"Elon Musk","city":"Gotenburg","customerSince":new Date(2017,8,15),"orderTotal":2222.55},
+            {"id":105,"name":"Patty Berger","city":"New Delhi","customerSince":new Date(2018,6,9),"orderTotal":4444.55},
+            {"id":106,"name":"Ian Zachariah","city":"Hyderabad","customerSince":new Date(2012,5,14),"orderTotal":3333.55},
+        ];
+        
+        
+
+ [
+            {"id":101,"name":"Angela Merkel","city":"Berlin","customerSince":"22-Jul-2017","orderTotal":5555.55},
+            {"id":102,"name":"Kevin Marsh","city":"London","customerSince":"15-Aug-2018","orderTotal":6666.66},
+            {"id":103,"name":"Hamid Ajbouti","city":"Kiev","customerSince":"09-Dec-2014","orderTotal":7777.55},
+            {"id":104,"name":"Elon Musk","city":"Gotenburg","customerSince":"07-Jan-2011","orderTotal":2222.55},
+            {"id":105,"name":"Patty Berger","city":"New Delhi","customerSince":"09-Jun-2012","orderTotal":4444.55},
+            {"id":106,"name":"Ian Zachariah","city":"Hyderabad","customerSince":"14-Feb-2020","orderTotal":3333.55}
+        ]
+
+    \\192.168.2.35\SoftShare
+************************MongoDB Scripts
+
+
+#cmd prompt
+
+cd C:\Program Files\MongoDB\Server\6.0\bin>
+
+mongosh
+
+use customersDb;
+
+db.createCollection("customers");
+
+var myCustomers =  [{"id":101,"name":"Angela Merkel","city":"Berlin","customerSince":new Date(2007,9,22),"orderTotal":5555.55},{"id":102,"name":"Kevin Marsh","city":"London","customerSince":new Date(2004,3,12),"orderTotal":6666.66},{"id":103,"name":"Hamid Ajbouti","city":"Kiev","customerSince":new Date(2003,4,2),"orderTotal":7777.55},{"id":104,"name":"Elon Musk","city":"Gotenburg","customerSince":new Date(2017,8,15),"orderTotal":2222.55},{"id":105,"name":"Patty Berger","city":"New Delhi","customerSince":new Date(2018,6,9),"orderTotal":4444.55},{"id":106,"name":"Ian Zachariah","city":"Hyderabad","customerSince":new Date(2012,5,14),"orderTotal":3333.55}];
+
+db.customers.insertMany(myCustomers)
+
+db.customers.find({});
+db.customers.find({}).pretty();
+    
+
+
+
+    
+    *******************webapidemo project****************
+    
+    
+    -------------package.json-------------------
+    {
+  "name": "webapidemo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "koa": "2.6.2",
+    "koa-body": "4.0.4",
+    "koa-cors": "0.0.16",
+    "koa-logger": "^3.2.1",
+    "koa-router": "^7.4.0",
+    "@koa/cors": "^2.2.3",
+    "koa-static": "^5.0.0",
+    "mongoose": "^5.3.1",
+    "nodemon": "2.0.1"
+  }
+}
+
+---------------------------------index.js------------------
+
+const koa = require("koa");
+const koaLogger = require("koa-logger");
+const bodyParser = require("koa-body");
+const router = require("../webApiDemo/middleware/router");
+const cors = require("koa-cors");
+
+//create the koa application container
+const app = new koa();
+
+const mongoose = require("mongoose");
+
+// connection string
+mongoose.connect("mongodb://localhost:27017/customersDb", {
+  useNewUrlParser: true,
+});
+const db = mongoose.connection;
+db.on("error", (error) => {
+  throw new Error("Error while connecting to db");
+});
+db.once("open", () => console.log("Connected to database"));
+
+//inject the services
+app.use(koaLogger());
+app.use(bodyParser());
+app.use(cors());
+app.use(router.routes());
+app.use(router.allowedMethods());
+
+const port = 3000;
+//launch the app
+app.listen(port, () => {
+  console.log(`Server is now running on http://localhost:${port}`);
+});
+
+----------------------------------models/customerModel.js------------
+
+const mongoose = require("mongoose");
+const Schema = mongoose.Schema;
+
+//schema definition - ODM - Object Document Mapping
+
+const customerSchema = new Schema({
+    id:{type:Number,required:true},
+    name:String,
+    city:String,
+    orderTotal:Number,
+    customerSince:{type:Date}
+
+})
+const customer = mongoose.model('customer',customerSchema);
+module.exports = customer;
+
+--------------------controllers\customercontroller.js--------
+
+const Customer = require('../models/customerModel');
+
+module.exports = {
+    async getAllCustomers(ctx){
+        const customers = await Customer.find({});
+        ctx.body = customers;
+    }
+}
+
+
+--------------------------middleware/router.js-----------------------
+const KoaRouter = require("koa-router");
+const router = new KoaRouter();
+const Customerscontroller = require("../controllers/customerController")
+//Routing dictionary
+router
+.get("/",(ctx) => (ctx.body="Welcome to Customers and Orders API!"))
+.get("/customers",(ctx) => Customerscontroller.getAllCustomers(ctx))
+
+
+module.exports = router
+
+node index.js
+
+
+
